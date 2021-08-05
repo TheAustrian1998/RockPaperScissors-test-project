@@ -32,9 +32,8 @@ contract RockPaperScissors {
     function _determineWinner(Moves attackerMove, Moves defenderMove, Match memory _match) private returns (address, address){
 
         if (attackerMove == Moves.NONE) {
-            //Attacker submitted a invalid move, penalized
+            //Attacker submitted a invalid move, penalized. Defender wins
             IERC20(RPSToken).transfer(_match.defender, (_match.bet * 2) + (_match.bet * 2 / 100));
-            //console.log('log',1);
             return (_match.defender,_match.attacker);
         }
 
@@ -42,20 +41,17 @@ contract RockPaperScissors {
             //Equals
             IERC20(RPSToken).transfer(_match.attacker, _match.bet + (_match.bet * 2 / 100));
             IERC20(RPSToken).transfer(_match.defender, _match.bet);
-            //console.log('log',2);
             return (address(0),address(0));
         }
 
         if ((attackerMove == Moves.ROCK && defenderMove == Moves.SCISSORS) || (attackerMove == Moves.SCISSORS && defenderMove == Moves.PAPER) || (attackerMove == Moves.PAPER && defenderMove == Moves.ROCK)){
             //Attacker wins
             IERC20(RPSToken).transfer(_match.attacker, (_match.bet * 2) + (_match.bet * 2 / 100));
-            //console.log('log',3);
             return (_match.attacker,_match.defender);
         }else{
             //defender wins
-            IERC20(RPSToken).transfer(_match.attacker, _match.bet * 2);
-            IERC20(RPSToken).transfer(_match.attacker, _match.bet * 2 / 100);
-            //console.log('log', 4);
+            IERC20(RPSToken).transfer(_match.defender, _match.bet * 2);
+            IERC20(RPSToken).transfer(_match.attacker, (_match.bet * 2 / 100));
             return (_match.defender,_match.attacker);
         }
     }
