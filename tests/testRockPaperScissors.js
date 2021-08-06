@@ -44,6 +44,7 @@ let initialRPSBalance = 10000;
 let betNumber = 150;
 
 describe("RockPaperScissors", function () {
+    //Deploy
     beforeEach(async function(){
         this.accounts = await ethers.getSigners();
 
@@ -110,6 +111,7 @@ describe("RockPaperScissors", function () {
         });
     }
 
+    //Loop 10 times, with random moves
     for (let i = 0; i < 10; i++) {
         it("Should create a match, defender joins, and attacker left the match, then defender claims refund...", async function(){
             //Create
@@ -130,9 +132,31 @@ describe("RockPaperScissors", function () {
             await ethers.provider.send('evm_increaseTime', [691200]); //Increase time in 8 days
 
             //Refund
-            let refundMatchTx = await this.rockPaperScissors.connect(this.accounts[2]).refundMatch(matchId);
+            let defenderRefundMatchTx = await this.rockPaperScissors.connect(this.accounts[2]).defenderRefundMatch(matchId);
             let defenderBalance = await this._RPSToken.balanceOf(this.accounts[2].address);
             expect(Number(ethers.utils.formatUnits(defenderBalance))).equals((betNumber + initialRPSBalance) + (betNumber * 2 / 100));
+        });
+    }
+
+    //Loop 10 times, with random moves
+    for (let i = 0; i < 10; i++) {
+        it("Should create a match, defender never joins, then attacker claims refund...", async function(){
+            //Create
+            let keyword = getRandomString();
+            let attackerMove = getRandomMove();
+            let hashedString = ethers.utils.solidityKeccak256(["uint8", "string"], [attackerMove, keyword]);
+            let approveAccount1 = await this._RPSToken.connect(this.accounts[1]).approve(this.rockPaperScissors.address, ethers.utils.parseUnits('200',"ether"));
+            let createMatchTx = await this.rockPaperScissors.connect(this.accounts[1]).createMatch(this.accounts[2].address, ethers.utils.parseUnits(String(betNumber),"ether"), hashedString);
+            let receiptCreateMatchTx = await createMatchTx.wait();
+            let matchId = filterEvent(receiptCreateMatchTx, 'MatchCreated')['matchId'];
+
+            //Time travelling!
+            await ethers.provider.send('evm_increaseTime', [691200]); //Increase time in 8 days
+
+            //Refund
+            let attackerRefundMatchTx = await this.rockPaperScissors.connect(this.accounts[1]).attackerRefundMatch(matchId);
+            let attackerBalance = await this._RPSToken.balanceOf(this.accounts[1].address);
+            expect(Number(ethers.utils.formatUnits(attackerBalance))).equals(initialRPSBalance);
         });
     }
 });
